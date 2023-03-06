@@ -1,0 +1,11 @@
+name: CarRacing
+dependencies:
+  - jupyter
+  - numpy
+  - gym
+  - pip
+  - moviepy
+  - pytorch torchvision torchaudio -c pytorch # for macos
+  - tqdm
+  - pip:
+      - box2d-kengz
