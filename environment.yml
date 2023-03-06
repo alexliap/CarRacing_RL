@@ -1,0 +1,14 @@
+name: CarRacing_RL
+dependencies:
+  - jupyter
+  - numpy
+  - gym
+  - moviepy
+  - swig
+  - pytorch torchvision torchaudio -c pytorch # for macOS
+  - tqdm
+  - pip
+  - pip:
+      - box2d-kengz # for macOS
+      - gym[box2d] # for Windows
+      - torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116

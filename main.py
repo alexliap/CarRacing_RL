@@ -12,7 +12,7 @@ env = gym.make('CarRacing-v2', render_mode = 'rgb_array',
                lap_complete_percent = 100, continuous=False)
 env = RecordVideo(env, 'car_racing')
 
-device = torch.device("mps")
+device = torch.device("cuda:0")
 
 a_size = env.action_space.n
 
