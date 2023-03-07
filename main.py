@@ -1,6 +1,7 @@
 import gym
 from model import Network
 from gym.wrappers import RecordVideo
+from torchvision.transforms.functional import rgb_to_grayscale
 from rl_functions import *
 from torch.optim import SGD
 import random
@@ -10,37 +11,40 @@ warnings.filterwarnings('ignore')
 
 env = gym.make('CarRacing-v2', render_mode = 'rgb_array',
                lap_complete_percent = 100, continuous=False)
-env = RecordVideo(env, 'car_racing')
+# env = RecordVideo(env, 'car_racing')
 
-device = torch.device("cuda:0")
+device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
 a_size = env.action_space.n
+# somewhere I saw that only one nn was used, so I can try to use only q_function
+q_function = Network([1, 16, 32, 64], [9216, 256, a_size], 0).to(device)
 
-q_function = Network([3, 16, 32, 64], [9216, 256, 5], 0.2).to(device)
+mirror = Network([1, 16, 32, 64], [9216, 256, a_size], 0).to(device)
 
-mirror = Network([3, 16, 32, 64], [9216, 256, 5], 0.2).to(device)
-
-optim = SGD(q_function.parameters(), lr = 1e-4)
+optim = SGD(q_function.parameters(), lr = 2.5e-4)
 
 buffer = []
 total_rewards = []
 
-max_episodes = 10000
+max_episodes = 1000
 max_steps = 1000
 epsilon = 1
 decay_rate = 0.0005
 gamma = 0.98
 for episode in tqdm(range(max_episodes), position = 0, desc = 'Episode progress'):
-    state = torch.from_numpy(env.reset()[0].astype('float32')).view(3, 96, -1).to(device)
+    epsilon = epsilon * np.exp(-decay_rate * episode)
+    # to torch and grayscale
+    state = tensor_to_grayscale(env.reset()[0]).to(device)
     step = 0
     done = False
     total_reward = 0
-    for i in tqdm(range(max_steps), position = 1, desc = 'Episode step progress', leave = True,
+    for i in tqdm(range(max_steps), position = 1, desc = 'Episode step progress', leave = False,
                   mininterval = 60):
         action = epsilon_greedy_policy(env, q_function, state, epsilon)
 
         new_state, reward, done, truncated, info = env.step(action)
-        new_state = torch.from_numpy(new_state.astype('float32')).view(3, 96, -1).to(device)
+        # to torch and grayscale
+        new_state = tensor_to_grayscale(new_state).to(device)
         total_reward += reward
 
         buffer.append((state, action, reward, new_state))
@@ -63,11 +67,11 @@ for episode in tqdm(range(max_episodes), position = 0, desc = 'Episode progress'
 
         state = new_state
         mirror.parameters = q_function.parameters()
-        epsilon = epsilon * np.exp(-decay_rate * episode)
 
-        if i % 250 == 0:
-            print(f'\n Step {i}: {total_reward}')
+        # if i % 250 == 0:
+        #     print(f'\n Step {i}: {total_reward}')
 
-    if episode % 5 == 0:
-        print(f'Episode {episode}: {total_reward}')
+    # if episode % 5 == 0:
+    #     print(f'Episode {episode}: {total_reward}')
+    print(f'\n Episode {episode}: {total_reward}')
     total_rewards.append(total_reward)
