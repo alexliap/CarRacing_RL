@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torchvision.transforms.functional import rgb_to_grayscale
+import torch.nn.functional as F
 
 
 def epsilon_greedy_policy(env, q_function, state, epsilon):
@@ -18,9 +19,11 @@ def epsilon_greedy_policy(env, q_function, state, epsilon):
     return action
 
 
-def q_loss(q_function, mirror, state, action, new_state, reward, gamma):
-    target = reward + gamma * mirror.forward(new_state).max()
-    return target - q_function.forward(state)[action]
+def q_loss(q_function, state, action, new_state, reward, gamma):
+    with torch.no_grad():
+        target = reward + gamma * q_function.forward(new_state).max()
+    expected = q_function.forward(state)[action]
+    return F.l1_loss(expected, target)
 
 
 def tensor_to_grayscale(img):
