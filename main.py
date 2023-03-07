@@ -30,7 +30,7 @@ max_epsilon = 1
 min_epsilon = 0.05
 decay_rate = 0.001
 gamma = 0.98
-batch_size = 128
+batch_size = 64
 
 for episode in tqdm(range(max_episodes), position = 0, desc = 'Episode progress'):
     epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate * episode)
@@ -50,7 +50,7 @@ for episode in tqdm(range(max_episodes), position = 0, desc = 'Episode progress'
 
         buffer.append((state, action, reward, new_state))
         # begin training when buffer has over 128 experiences
-        if len(buffer) > batch_size:
+        if len(buffer) > 2 * batch_size:
             train_batch = random.sample(buffer, batch_size)
             # --------------------- no problem --------------------- #
             # train on past experiences
